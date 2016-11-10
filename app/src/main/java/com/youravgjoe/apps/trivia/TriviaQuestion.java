@@ -101,13 +101,14 @@ public class TriviaQuestion {
     }
 
     private String decode(String in) {
-        try {
-            byte[] bytes = in.getBytes("UTF-8");
-            return new String(bytes, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
+//        try {
+//            byte[] bytes = in.getBytes("UTF-8");
+//            return new String(bytes, "UTF-8");
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//            return null;
+//        }
+        return in;
     }
 
     private void shuffleAnswers() {

@@ -2,11 +2,16 @@ package com.youravgjoe.apps.trivia;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ButtonBarLayout;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,15 +37,22 @@ public class GameActivity extends AppCompatActivity {
     private static final String DIFFICULTY = "DIFFICULTY";
     private static final String NUMBER_OF_QUESTIONS = "NUMBER_OF_QUESTIONS";
 
-    private List<TriviaQuestion> mQuestionList;
+    private List<TriviaQuestion> mTriviaQuestionList;
     private List<String> mAnswerList;
 
     private TextView mScoreTextView;
     private TextView mQuestionTextView;
     private RadioGroup mRadioGroup;
+    private Button mSubmitButton;
 
+    private int mCurrentQuestionIndex;
 
     private int mCorrect;
+
+    private boolean mQuestionAnswered;
+
+    // keep this here to subtract from the RadioButton ids. It's dumb, but this is my solution for now.
+    private int mTotalAnswerCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +62,11 @@ public class GameActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        mQuestionList = new ArrayList<>();
+        mTriviaQuestionList = new ArrayList<>();
         mAnswerList = new ArrayList<>();
+        mCurrentQuestionIndex = 0;
+        mCorrect = 0;
+        mQuestionAnswered = false;
 
         setupViews();
 
@@ -67,22 +82,91 @@ public class GameActivity extends AppCompatActivity {
 
     private void setupViews() {
         mScoreTextView = (TextView) findViewById(R.id.score);
-        mScoreTextView.setText(mCorrect + "/" + mQuestionList.size());
         mQuestionTextView = (TextView) findViewById(R.id.question);
         mRadioGroup = (RadioGroup) findViewById(R.id.radio_group);
+        mSubmitButton = (Button) findViewById(R.id.submit);
+        mSubmitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mQuestionAnswered) {
+                    if (mCurrentQuestionIndex == mTriviaQuestionList.size() - 1) {
+                        // if we've reached the end of the questions, load the summary.
+                        Toast.makeText(v.getContext(), "You got " + mCorrect + "/" + mTriviaQuestionList.size(), Toast.LENGTH_LONG).show();
+
+                        showSummary();
+                    } else {
+                        // if they've already answered and haven't reached the end of the questions, load the next question
+                        mCurrentQuestionIndex++;
+                        mQuestionAnswered = false;
+                        mTotalAnswerCount += mAnswerList.size();
+                        mAnswerList.clear();
+                        mRadioGroup.removeAllViews();
+                        mRadioGroup.clearCheck();
+                        mSubmitButton.setText(getResources().getString(R.string.prompt_submit));
+                        loadQuestion();
+                    }
+                } else {
+                    // if they haven't already answered, then handle the answer
+
+                    // make sure something has actually been checked
+                    final int checkedId = mRadioGroup.getCheckedRadioButtonId();
+                    Log.d(TAG, "checkedId: " + checkedId);
+                    if (checkedId == -1) {
+                        return;
+                    }
+
+                    String correctAnswer = mTriviaQuestionList.get(mCurrentQuestionIndex).getCorrectAnswer();
+
+                    RadioButton correctRadioButton = null;
+
+                    for (int i = 0; i < mRadioGroup.getChildCount(); i++) {
+                        Log.d(TAG, "count: " + mRadioGroup.getChildCount() + ", i: " + i + " RadioButton id: " + mRadioGroup.getChildAt(i).getId());
+                        RadioButton tempButton = (RadioButton) mRadioGroup.getChildAt(i);
+                        if (TextUtils.equals(tempButton.getText().toString(), correctAnswer)) {
+                            correctRadioButton = tempButton;
+                            break;
+                        }
+                    }
+
+                    RadioButton checkedRadioButton = (RadioButton) mRadioGroup.getChildAt(checkedId - 1 - mTotalAnswerCount);
+                    String answer = checkedRadioButton.getText().toString();
+
+                    // if they chose the correct answer, give them a high five!
+                    if (TextUtils.equals(answer, correctAnswer)) {
+                        mCorrect++;
+                        Toast.makeText(v.getContext(), "Correct! :)", Toast.LENGTH_SHORT).show();
+                        checkedRadioButton.setTextColor(getResources().getColor(R.color.correct));
+                    } else {
+                        // otherwise, tell them they were wrong, and which one was right
+                        Toast.makeText(v.getContext(), "Incorrect! :(", Toast.LENGTH_SHORT).show();
+                        checkedRadioButton.setTextColor(getResources().getColor(R.color.incorrect));
+                        correctRadioButton.setTextColor(getResources().getColor(R.color.correct));
+                    }
+
+                    mSubmitButton.setText(getResources().getString(R.string.prompt_next_question));
+                    mScoreTextView.setText(mCorrect + "/" + mTriviaQuestionList.size());
+
+                    mQuestionAnswered = true;
+                }
+            }
+        });
     }
 
-    private void startGame() {
-        mQuestionTextView.setText(mQuestionList.get(0).getQuestion());
+    private void loadQuestion() {
+        mQuestionTextView.setText(mTriviaQuestionList.get(mCurrentQuestionIndex).getQuestion());
 
-        mAnswerList = mQuestionList.get(0).getAllAnswers();
+        mAnswerList = mTriviaQuestionList.get(mCurrentQuestionIndex).getAllAnswers();
 
-        for (int i = 0; i < mQuestionList.get(0).getNumOfAnswers(); i++) {
+        for (int i = 0; i < mTriviaQuestionList.get(mCurrentQuestionIndex).getNumOfAnswers(); i++) {
             RadioButton radioButton = new RadioButton(this);
             radioButton.setText(mAnswerList.get(i));
             radioButton.setTextSize(18);
             mRadioGroup.addView(radioButton);
         }
+    }
+
+    private void showSummary() {
+
     }
 
     private void callApi(String numOfQuestions, String difficulty) {
@@ -125,10 +209,12 @@ public class GameActivity extends AppCompatActivity {
                         allAnswers.add(question.getCorrectAnswer());
                         question.setAllAnswers(allAnswers);
 
-                        mQuestionList.add(question);
+                        mTriviaQuestionList.add(question);
                     }
 
-                    startGame();
+                    mScoreTextView.setText(mCorrect + "/" + mTriviaQuestionList.size());
+
+                    loadQuestion();
                 } catch (JSONException e) {
                     Log.d(TAG, "JSONException");
                     e.printStackTrace();

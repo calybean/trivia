@@ -8,4 +8,5 @@
     <string name="prompt_number_of_questions">Choose Number of Questions:</string>
     <string name="prompt_start_game">Start Game!</string>
     <string name="prompt_submit">Submit</string>
+    <string name="prompt_next_question">Next ></string>
 </resources>
