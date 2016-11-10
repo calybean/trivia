@@ -50,6 +50,7 @@ public class GameActivity extends AppCompatActivity {
     private int mCorrect;
 
     private boolean mQuestionAnswered;
+    private boolean mSummaryShown;
 
     // keep this here to subtract from the RadioButton ids. It's dumb, but this is my solution for now.
     private int mTotalAnswerCount;
@@ -88,12 +89,18 @@ public class GameActivity extends AppCompatActivity {
         mSubmitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (mSummaryShown) {
+                    finish();
+                }
                 if (mQuestionAnswered) {
                     if (mCurrentQuestionIndex == mTriviaQuestionList.size() - 1) {
-                        // if we've reached the end of the questions, load the summary.
-                        Toast.makeText(v.getContext(), "You got " + mCorrect + "/" + mTriviaQuestionList.size(), Toast.LENGTH_LONG).show();
+                        if (mSummaryShown) {
 
-                        showSummary();
+                        } else {
+                            // if we've reached the end of the questions, load the summary.
+                            showSummary();
+                            mSummaryShown = true;
+                        }
                     } else {
                         // if they've already answered and haven't reached the end of the questions, load the next question
                         mCurrentQuestionIndex++;
@@ -166,7 +173,12 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void showSummary() {
+        mRadioGroup.setVisibility(View.GONE);
 
+        String summary = getResources().getString(R.string.summary, String.valueOf(mCorrect), String.valueOf(mTriviaQuestionList.size()));
+
+        mQuestionTextView.setText(summary);
+        mSubmitButton.setText(getResources().getString(R.string.done));
     }
 
     private void callApi(String numOfQuestions, String difficulty) {

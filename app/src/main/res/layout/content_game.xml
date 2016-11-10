@@ -29,7 +29,9 @@
         android:layout_below="@id/score"
         android:layout_marginTop="16dp"
         android:textSize="24sp"
-        android:textColor="@android:color/black"/>
+        android:textColor="@android:color/black"
+        android:textAlignment="center"
+        />
 
     <RadioGroup
         android:layout_margin="16dp"

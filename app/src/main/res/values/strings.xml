@@ -9,4 +9,7 @@
     <string name="prompt_start_game">Start Game!</string>
     <string name="prompt_submit">Submit</string>
     <string name="prompt_next_question">Next ></string>
+
+    <string name="summary">You got %1$s/%2$s\nGood Job!</string>
+    <string name="done">Done</string>
 </resources>
