@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Trivia</string>
+    <string name="title_activity_game">GameActivity</string>
+    <string name="action_settings">Settings</string>
+
+    <!--Prompts-->
+    <string name="prompt_difficulty">Choose Difficulty:</string>
+    <string name="prompt_number_of_questions">Choose Number of Questions:</string>
+    <string name="prompt_start_game">Start Game!</string>
+    <string name="prompt_submit">Submit</string>
+</resources>
