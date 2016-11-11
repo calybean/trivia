@@ -82,6 +82,16 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void setupViews() {
+
+        // todo: make a middle view at the top that says "Question 4/10",
+        // todo: and then one in the top left corner with # correct and top right with # incorrect
+
+
+        // todo: try to decode the whole json string before we parse it into a json object
+
+        // todo: if that doesn't work, try specifying the encoding in the url when we call the api,
+        // todo: and then decode it that specific way on the other end.
+
         mScoreTextView = (TextView) findViewById(R.id.score);
         mQuestionTextView = (TextView) findViewById(R.id.question);
         mRadioGroup = (RadioGroup) findViewById(R.id.radio_group);
