@@ -10,6 +10,7 @@
     <string name="prompt_submit">Submit</string>
     <string name="prompt_next_question">Next ></string>
 
-    <string name="summary">You got %1$s/%2$s\nGood Job!</string>
+    <string name="summary_good_job">You got %1$s/%2$s\nGood job!</string>
+    <string name="summary_better_luck">You got %1$s/%2$s\nBetter luck next time.</string>
     <string name="done">Done</string>
 </resources>

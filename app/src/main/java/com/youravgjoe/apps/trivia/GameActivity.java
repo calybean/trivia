@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ButtonBarLayout;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -18,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -36,6 +38,8 @@ public class GameActivity extends AppCompatActivity {
     private static final String TAG = "GameActivity";
     private static final String DIFFICULTY = "DIFFICULTY";
     private static final String NUMBER_OF_QUESTIONS = "NUMBER_OF_QUESTIONS";
+    private static final String TOTAL_NUMBER_OF_ANSWERS = "TOTAL_NUMBER_OF_ANSWERS";
+    private static final String BASE_64 = "base64";
 
     private List<TriviaQuestion> mTriviaQuestionList;
     private List<String> mAnswerList;
@@ -53,7 +57,7 @@ public class GameActivity extends AppCompatActivity {
     private boolean mSummaryShown;
 
     // keep this here to subtract from the RadioButton ids. It's dumb, but this is my solution for now.
-    private int mTotalAnswerCount;
+//    private int mTotalAnswerCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,11 +78,19 @@ public class GameActivity extends AppCompatActivity {
         Bundle extras = getIntent().getExtras();
 
         if (extras != null) {
-            callApi(extras.getString(NUMBER_OF_QUESTIONS), extras.getString(DIFFICULTY).toLowerCase());
+//            mTotalAnswerCount += extras.getInt(TOTAL_NUMBER_OF_ANSWERS);
+            callApi(extras.getString(NUMBER_OF_QUESTIONS), extras.getString(DIFFICULTY).toLowerCase(), BASE_64);
         } else {
             Log.d(TAG, "Error getting difficulty and number of questions.");
             finish();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+//        MainActivity.mTotalNumOfAnswers += mTotalAnswerCount;
     }
 
     private void setupViews() {
@@ -107,7 +119,8 @@ public class GameActivity extends AppCompatActivity {
                         if (mSummaryShown) {
 
                         } else {
-                            // if we've reached the end of the questions, load the summary.
+                            // if we've reached the end of the questions, add the last group of answers and load the summary.
+//                            mTotalAnswerCount += mAnswerList.size();
                             showSummary();
                             mSummaryShown = true;
                         }
@@ -115,7 +128,7 @@ public class GameActivity extends AppCompatActivity {
                         // if they've already answered and haven't reached the end of the questions, load the next question
                         mCurrentQuestionIndex++;
                         mQuestionAnswered = false;
-                        mTotalAnswerCount += mAnswerList.size();
+//                        mTotalAnswerCount += mAnswerList.size();
                         mAnswerList.clear();
                         mRadioGroup.removeAllViews();
                         mRadioGroup.clearCheck();
@@ -145,17 +158,18 @@ public class GameActivity extends AppCompatActivity {
                         }
                     }
 
-                    RadioButton checkedRadioButton = (RadioButton) mRadioGroup.getChildAt(checkedId - 1 - mTotalAnswerCount);
+                    RadioButton checkedRadioButton = (RadioButton) mRadioGroup.getChildAt(checkedId);
+//                    RadioButton checkedRadioButton = (RadioButton) mRadioGroup.getChildAt(checkedId - 1 - mTotalAnswerCount);
                     String answer = checkedRadioButton.getText().toString();
 
-                    // if they chose the correct answer, give them a high five!
+                    // if they chose the correct answer, give them an internet high five!
                     if (TextUtils.equals(answer, correctAnswer)) {
                         mCorrect++;
-                        Toast.makeText(v.getContext(), "Correct! :)", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(v.getContext(), "Correct! :)", Toast.LENGTH_SHORT).show();
                         checkedRadioButton.setTextColor(getResources().getColor(R.color.correct));
                     } else {
                         // otherwise, tell them they were wrong, and which one was right
-                        Toast.makeText(v.getContext(), "Incorrect! :(", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(v.getContext(), "Incorrect! :(", Toast.LENGTH_SHORT).show();
                         checkedRadioButton.setTextColor(getResources().getColor(R.color.incorrect));
                         correctRadioButton.setTextColor(getResources().getColor(R.color.correct));
                     }
@@ -176,6 +190,7 @@ public class GameActivity extends AppCompatActivity {
 
         for (int i = 0; i < mTriviaQuestionList.get(mCurrentQuestionIndex).getNumOfAnswers(); i++) {
             RadioButton radioButton = new RadioButton(this);
+            radioButton.setId(i);
             radioButton.setText(mAnswerList.get(i));
             radioButton.setTextSize(18);
             mRadioGroup.addView(radioButton);
@@ -185,13 +200,19 @@ public class GameActivity extends AppCompatActivity {
     private void showSummary() {
         mRadioGroup.setVisibility(View.GONE);
 
-        String summary = getResources().getString(R.string.summary, String.valueOf(mCorrect), String.valueOf(mTriviaQuestionList.size()));
+        String summary;
+        // if they did better than 50%, tell them good job
+        if (mCorrect >= (mTriviaQuestionList.size() / 2)) {
+            summary = getResources().getString(R.string.summary_good_job, String.valueOf(mCorrect), String.valueOf(mTriviaQuestionList.size()));
+        } else {
+            summary = getResources().getString(R.string.summary_better_luck, String.valueOf(mCorrect), String.valueOf(mTriviaQuestionList.size()));
+        }
 
         mQuestionTextView.setText(summary);
         mSubmitButton.setText(getResources().getString(R.string.done));
     }
 
-    private void callApi(String numOfQuestions, String difficulty) {
+    private void callApi(String numOfQuestions, String difficulty, String encoding) {
         final String BASE_URL = "https://www.opentdb.com/";
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
@@ -200,7 +221,7 @@ public class GameActivity extends AppCompatActivity {
 
         MyApiEndpointInterface apiService = retrofit.create(MyApiEndpointInterface.class);
 
-        Call<ResponseBody> result = apiService.getTriviaQuestions(numOfQuestions, difficulty);
+        Call<ResponseBody> result = apiService.getTriviaQuestions(numOfQuestions, difficulty, encoding);
 
         Log.d(TAG, result.toString());
 
@@ -210,6 +231,27 @@ public class GameActivity extends AppCompatActivity {
                 JSONObject responseJson;
                 JSONArray questionArray;
                 try {
+
+//                    String responseString = response.body().string();
+//
+//                    Log.d(TAG, "responseString" + responseString);
+//
+//                    byte[] bytes = Base64.decode(responseString, Base64.DEFAULT);
+//
+//                    String decodedResponse = new String(bytes, "UTF-8");
+
+
+
+//                    try {
+//                        byte[] bytes = in.getBytes("UTF-8");
+//                        return new String(bytes, "UTF-8");
+//                    } catch (UnsupportedEncodingException e) {
+//                        e.printStackTrace();
+//                        return null;
+//                    }
+
+
+
                     responseJson = new JSONObject(response.body().string());
                     questionArray = responseJson.getJSONArray("results");
 
@@ -227,9 +269,9 @@ public class GameActivity extends AppCompatActivity {
                         }
                         question.setIncorrectAnswers(incorrectAnswersList);
 
-                        List<String> allAnswers = incorrectAnswersList;
-                        allAnswers.add(question.getCorrectAnswer());
-                        question.setAllAnswers(allAnswers);
+//                        List<String> allAnswers = incorrectAnswersList;
+//                        allAnswers.add(question.getCorrectAnswer());
+                        question.setAllAnswers();
 
                         mTriviaQuestionList.add(question);
                     }
@@ -257,6 +299,6 @@ public class GameActivity extends AppCompatActivity {
         // Callback for the parsed response is the last parameter
 
         @GET("api.php")
-        Call<ResponseBody> getTriviaQuestions(@Query("amount") String amount, @Query("difficulty") String difficulty);
+        Call<ResponseBody> getTriviaQuestions(@Query("amount") String amount, @Query("difficulty") String difficulty, @Query("encode") String encoding);
     }
 }

@@ -23,9 +23,12 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final String DIFFICULTY = "DIFFICULTY";
     private static final String NUMBER_OF_QUESTIONS = "NUMBER_OF_QUESTIONS";
+    private static final String TOTAL_NUMBER_OF_ANSWERS = "TOTAL_NUMBER_OF_ANSWERS";
 
     private String mDifficulty;
     private String mNumOfQuestions;
+
+//    public static int mTotalNumOfAnswers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent startGameIntent = new Intent(MainActivity.this, GameActivity.class);
                 startGameIntent.putExtra(DIFFICULTY, mDifficulty);
                 startGameIntent.putExtra(NUMBER_OF_QUESTIONS, mNumOfQuestions);
+//                startGameIntent.putExtra(TOTAL_NUMBER_OF_ANSWERS, mTotalNumOfAnswers);
                 startActivity(startGameIntent);
             }
         });

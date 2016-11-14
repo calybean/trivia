@@ -1,5 +1,9 @@
 package com.youravgjoe.apps.trivia;
 
+import android.util.Base64;
+import android.util.Log;
+import android.widget.Toast;
+
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +15,8 @@ import java.util.Random;
  */
 
 public class TriviaQuestion {
+
+    private static final String TAG = "TriviaQuestion";
 
     private String category;
     private String difficulty;
@@ -74,11 +80,11 @@ public class TriviaQuestion {
     }
 
     public void setIncorrectAnswers(List<String> incorrectAnswers) {
-        this.incorrectAnswers = incorrectAnswers;
         numOfAnswers = 1 + incorrectAnswers.size(); // 1 for correct answer, plus all incorrect answers
 
-        for (int i = 0; i < this.incorrectAnswers.size(); i++) {
-            decode(this.incorrectAnswers.get(i));
+        this.incorrectAnswers = new ArrayList<>();
+        for (int i = 0; i < incorrectAnswers.size(); i++) {
+            this.incorrectAnswers.add(decode(incorrectAnswers.get(i)));
         }
     }
 
@@ -90,25 +96,26 @@ public class TriviaQuestion {
         return allAnswers;
     }
 
-    public void setAllAnswers(List<String> allAnswers) {
-        this.allAnswers = allAnswers;
-
-        for (int i = 0; i < this.allAnswers.size(); i++) {
-            decode(this.allAnswers.get(i));
+    public void setAllAnswers() {
+        if (correctAnswer.equals(null) || incorrectAnswers.isEmpty()) {
+            Log.d(TAG, "Could not set all answers");
         }
+
+        allAnswers = incorrectAnswers;
+        allAnswers.add(correctAnswer);
 
         shuffleAnswers();
     }
 
     private String decode(String in) {
-//        try {
-//            byte[] bytes = in.getBytes("UTF-8");
-//            return new String(bytes, "UTF-8");
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//            return null;
-//        }
-        return in;
+        Log.d(TAG, "in: " + in);
+        try {
+            byte[] bytes = Base64.decode(in, Base64.URL_SAFE);
+            return new String(bytes, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private void shuffleAnswers() {
